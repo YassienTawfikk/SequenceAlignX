@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <title>SequenceAlignX - New UI</title>
+    <style>
+        /* ============ BASE RESET + BODY ============ */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #222;
+            color: #eee;
+            font-family: "Trebuchet MS", sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* ============ HEADER ============ */
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            color: #f7ca18;
+        }
+
+        header p {
+            font-size: 1.1em;
+            color: #ddd;
+        }
+
+        /* ============ CONTAINER ============ */
+        .alignment-app {
+            background: #2d2d2d;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        /* ============ CONTROLS ============ */
+        .controls-section {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .controls-section button {
+            background: #f39c12;
+            color: #222;
+            font-weight: bold;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 10px 18px;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        .controls-section button:hover {
+            background: #d9860f;
+        }
+
+        .controls-section button:disabled {
+            background: #777;
+            cursor: not-allowed;
+        }
+
+        /* ============ SETTINGS & INPUTS ============ */
+        .settings-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .settings-box {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .settings-box label {
+            font-weight: bold;
+            margin-bottom: 3px;
+            color: #eee;
+        }
+
+        .settings-box input {
+            width: 70px;
+            padding: 6px;
+            border: 1px solid #666;
+            border-radius: 4px;
+            background: #333;
+            color: #f7ca18;
+        }
+
+        .sequence-inputs {
+            display: flex;
+            gap: 15px;
+        }
+
+        .sequence-inputs input {
+            width: 190px;
+            padding: 6px;
+            border: 1px solid #666;
+            border-radius: 4px;
+            background: #333;
+            color: #f7ca18;
+        }
+
+        /* ============ MATRIX DISPLAY ============ */
+        .matrix-container {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        table {
+            border-collapse: collapse;
+            margin: 0 auto;
+            font-weight: 500;
+        }
+
+        td {
+            width: 45px;
+            height: 45px;
+            text-align: center;
+            border: 1px solid #555;
+            position: relative;
+        }
+
+        /* Sequence Header Cells */
+        .cell-seq-header {
+            background: #3a3a3a;
+            font-weight: bold;
+            color: #f7ca18;
+            text-transform: uppercase;
+        }
+
+        /* Highlighting and Path */
+        .active-cell {
+            background: #f39c12 !important;
+            color: #000;
+        }
+
+        .path-cell {
+            background: #27ae60 !important;
+            color: #fff;
+        }
+
+        .highest-score {
+            background: #f4d03f !important;
+            color: #000 !important;
+            font-weight: bold;
+        }
+
+        /* ============ RESULT & MESSAGES ============ */
+        .explanation-box {
+            margin-top: 20px;
+            background: #3a3a3a;
+            border-left: 4px solid #f39c12;
+            padding: 15px;
+            border-radius: 4px;
+            line-height: 1.4;
+        }
+
+        .alignment-result {
+            display: none;
+            margin-top: 20px;
+            background: #3a3a3a;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+            font-family: monospace;
+        }
+
+        .alignment-result h3 {
+            color: #f1c40f;
+            margin-bottom: 10px;
+        }
+
+        .alignment-line {
+            font-size: 18px;
+            margin: 5px 0;
+        }
+
+        .char-gap {
+            color: #7f8c8d;
+        }
+
+        .char-match {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+
+        .char-mismatch {
+            color: #e74c3c;
+        }
+
+        /* ============ POPUPS (Guessing) ============ */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            animation: fadeIn 0.3s;
+        }
+
+        .popup {
+            background: #fff;
+            color: #333;
+            padding: 25px;
+            border-radius: 6px;
+            max-width: 85%;
+            text-align: center;
+            position: relative;
+        }
+
+        .popup h2 {
+            margin-bottom: 10px;
+        }
+
+        .popup p {
+            margin-bottom: 10px;
+        }
+
+        .popup input {
+            padding: 8px;
+            margin-top: 10px;
+            width: 80%;
+            font-size: 16px;
+        }
+
+        .popup button {
+            background: #f39c12;
+            color: #222;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 15px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            margin-top: 15px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Confetti */
+        .confetti-piece {
+            position: fixed;
+            top: -10px;
+            width: 10px;
+            height: 10px;
+            background: #f00;
+            animation: confettiFall linear forwards;
+        }
+
+        @keyframes confettiFall {
+            to {
+                transform: translateY(120vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>SequenceAlignX - New Look</h1>
+    <p>A local alignment tool with stepwise filling, real-time traceback, and an interactive Guess Mode.</p>
+</header>
+
+<div class="alignment-app">
+    <!-- Settings and Sequence Inputs -->
+    <div class="settings-area">
+        <div class="sequence-inputs">
+            <div class="settings-box">
+                <label for="seq1-field">Sequence 1</label>
+                <input type="text" id="seq1-field" value="GATTACA"/>
+            </div>
+            <div class="settings-box">
+                <label for="seq2-field">Sequence 2</label>
+                <input type="text" id="seq2-field" value="GTCGACG"/>
+            </div>
+        </div>
+        <div class="settings-box">
+            <label for="match-score-field">Match Score</label>
+            <input type="number" id="match-score-field" value="2" min="1"/>
+        </div>
+        <div class="settings-box">
+            <label for="mismatch-score-field">Mismatch</label>
+            <input type="number" id="mismatch-score-field" value="-1" max="0"/>
+        </div>
+        <div class="settings-box">
+            <label for="gap-score-field">Gap Penalty</label>
+            <input type="number" id="gap-score-field" value="-2" max="0"/>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-section">
+        <button id="initialize-btn">Initialize</button>
+        <button id="next-btn" disabled>Next Step</button>
+        <button id="back-btn" disabled>Previous</button>
+        <button id="auto-btn" disabled>Auto Run</button>
+        <button id="reset-btn">Reset</button>
+        <button id="guess-btn" disabled>Guess Mode</button>
+    </div>
+
+    <!-- Matrix Display -->
+    <div class="matrix-container">
+        <div id="matrix-display"></div>
+    </div>
+
+    <!-- Alignment Result -->
+    <div class="alignment-result" id="alignment-panel">
+        <h3>Local Alignment Result</h3>
+        <div class="alignment-line" id="aligned-seq1"></div>
+        <div class="alignment-line" id="aligned-mid"></div>
+        <div class="alignment-line" id="aligned-seq2"></div>
+        <p>Score: <span id="final-score"></span></p>
+    </div>
+
+    <!-- Explanation or Step Info -->
+    <div class="explanation-box" id="explanation-box">
+        <h3>Welcome!</h3>
+        <p>Click "Initialize" after adjusting sequences and scoring to build the matrix. Use "Next Step" for a cell-by-cell demonstration, or
+            switch on "Guess Mode" to input cell values yourself.</p>
+    </div>
+</div>
+
+<script>
+    /* ------------------------------------------
+       GLOBAL STATE
+    ------------------------------------------ */
+    let table = [];
+    let rows = 0, cols = 0;
+    let seq1 = "", seq2 = "";
+    let stepIndex = 0;
+    let bestScore = 0;
+    let bestCell = {r: 0, c: 0};
+    let tracing = false;
+    let pathCells = [];
+    let pathIndex = 0;
+    let isGuessEnabled = false;
+    let stateHistory = [];
+    let historyPointer = -1;
+    let highlightCell = {r: -1, c: -1};
+    let autoTimer = null;
+
+    // DOM references
+    const seq1Input = document.getElementById("seq1-field");
+    const seq2Input = document.getElementById("seq2-field");
+    const matchInput = document.getElementById("match-score-field");
+    const mismatchInput = document.getElementById("mismatch-score-field");
+    const gapInput = document.getElementById("gap-score-field");
+
+    const initBtn = document.getElementById("initialize-btn");
+    const nextBtn = document.getElementById("next-btn");
+    const backBtn = document.getElementById("back-btn");
+    const autoBtn = document.getElementById("auto-btn");
+    const resetBtn = document.getElementById("reset-btn");
+    const guessBtn = document.getElementById("guess-btn");
+
+    const matrixDiv = document.getElementById("matrix-display");
+    const explanationBox = document.getElementById("explanation-box");
+    const alignmentPanel = document.getElementById("alignment-panel");
+    const alignedSeq1 = document.getElementById("aligned-seq1");
+    const alignedSeq2 = document.getElementById("aligned-seq2");
+    const alignedMid = document.getElementById("aligned-mid");
+    const finalScore = document.getElementById("final-score");
+
+    // Event Listeners
+    initBtn.addEventListener("click", initialize);
+    nextBtn.addEventListener("click", nextStep);
+    backBtn.addEventListener("click", prevStep);
+    autoBtn.addEventListener("click", toggleAutoRun);
+    resetBtn.addEventListener("click", resetAll);
+    guessBtn.addEventListener("click", toggleGuessMode);
+
+    /* ------------------------------------------
+       INIT
+    ------------------------------------------ */
+    function initialize() {
+        seq1 = seq1Input.value.toUpperCase().replace(/[^ACGT]/g, "");
+        seq2 = seq2Input.value.toUpperCase().replace(/[^ACGT]/g, "");
+        if (!seq1 || !seq2) {
+            alert("Please enter valid sequences with characters: A, C, G, T");
+            return;
+        }
+        clearState();
+
+        rows = seq2.length + 1;
+        cols = seq1.length + 1;
+        table = Array.from({length: rows}, () => Array(cols).fill(0));
+
+        explanationBox.innerHTML = `
+        <h3>Matrix Initialized</h3>
+        <p>Created a ${rows}x${cols} table for local alignment.
+           The top row and left column are zeroed.
+           Click "Next Step" to proceed, or enable "Guess Mode" to fill scores yourself.</p>
+      `;
+
+        // Enable controls
+        nextBtn.disabled = false;
+        autoBtn.disabled = false;
+        guessBtn.disabled = false;
+
+        storeHistory();
+        renderMatrix();
+        stepIndex = 1;
+    }
+
+    function clearState() {
+        table = [];
+        stepIndex = 0;
+        bestScore = 0;
+        bestCell = {r: 0, c: 0};
+        tracing = false;
+        pathCells = [];
+        pathIndex = 0;
+        isGuessEnabled = false;
+        guessBtn.textContent = "Guess Mode";
+        alignmentPanel.style.display = "none";
+        explanationBox.innerHTML = "";
+        stateHistory = [];
+        historyPointer = -1;
+        highlightCell = {r: -1, c: -1};
+        stopAutoRun();
+    }
+
+    /* ------------------------------------------
+       STEPS
+    ------------------------------------------ */
+    function nextStep() {
+        // If we can move forward in history
+        if (historyPointer < stateHistory.length - 1) {
+            historyPointer++;
+            restoreHistory(historyPointer);
+            return;
+        }
+
+        // If we are tracing
+        if (tracing) {
+            runTraceStep();
+            return;
+        }
+
+        // Normal filling step
+        const matchVal = parseInt(matchInput.value);
+        const mismatchVal = parseInt(mismatchInput.value);
+        const gapVal = parseInt(gapInput.value);
+
+        const idx = stepIndex;
+        let r = Math.floor((idx - 1) / (cols - 1)) + 1;
+        let c = ((idx - 1) % (cols - 1)) + 1;
+
+        if (r >= rows || c >= cols) {
+            // Start traceback
+            startTraceback();
+            return;
+        }
+
+        const baseA = seq1[c - 1];
+        const baseB = seq2[r - 1];
+        const diagScore = table[r - 1][c - 1] + (baseA === baseB ? matchVal : mismatchVal);
+        const upScore = table[r - 1][c] + gapVal;
+        const leftScore = table[r][c - 1] + gapVal;
+        const cellScore = Math.max(0, diagScore, upScore, leftScore);
+        table[r][c] = cellScore;
+
+        highlightCell = {r, c};
+        if (cellScore > bestScore) {
+            bestScore = cellScore;
+            bestCell = {r, c};
+        }
+
+        explanationBox.innerHTML = `
+        <h3>Cell (${r}, ${c})</h3>
+        <p>Compare '${baseA}' vs '${baseB}':
+           Diag=${diagScore},
+           Up=${upScore},
+           Left=${leftScore}.
+           Chosen: ${cellScore} (reset to 0 if negative).</p>
+      `;
+
+        stepIndex++;
+        storeHistory();
+        renderMatrix();
+    }
+
+    function startTraceback() {
+        tracing = true;
+        pathCells = findPathFromBest();
+        pathIndex = 0;
+        explanationBox.innerHTML = `
+        <h3>Filling Completed</h3>
+        <p>Max score is ${bestScore} at cell (${bestCell.r}, ${bestCell.c}).
+           Now tracing back to find the alignment region.</p>
+      `;
+        storeHistory();
+        renderMatrix();
+    }
+
+    function findPathFromBest() {
+        // Collect path from bestCell back
+        const path = [];
+        let rr = bestCell.r;
+        let cc = bestCell.c;
+        while (rr > 0 && cc > 0 && table[rr][cc] > 0) {
+            path.push({r: rr, c: cc});
+            const currVal = table[rr][cc];
+            const diag = table[rr - 1][cc - 1];
+            const up = table[rr - 1][cc];
+            const left = table[rr][cc - 1];
+            const baseA = seq1[cc - 1];
+            const baseB = seq2[rr - 1];
+            const matchVal = parseInt(matchInput.value);
+            const mismatchVal = parseInt(mismatchInput.value);
+            const gapVal = parseInt(gapInput.value);
+
+            if (currVal === diag + (baseA === baseB ? matchVal : mismatchVal)) {
+                rr--;
+                cc--;
+            } else if (currVal === up + gapVal) {
+                rr--;
+            } else if (currVal === left + gapVal) {
+                cc--;
+            } else {
+                break;
+            }
+        }
+        return path;
+    }
+
+    function runTraceStep() {
+        if (pathIndex >= pathCells.length) {
+            finalizeAlignment();
+            return;
+        }
+        highlightCell = {
+            r: pathCells[pathIndex].r,
+            c: pathCells[pathIndex].c
+        };
+        explanationBox.innerHTML = `
+        <h3>Traceback Step ${pathIndex + 1} / ${pathCells.length}</h3>
+        <p>Following the path until we reach a score of 0, building the alignment region in reverse.</p>
+      `;
+        pathIndex++;
+        storeHistory();
+        renderMatrix(true);
+    }
+
+    function finalizeAlignment() {
+        // Build alignment strings
+        let seqAAligned = "", seqBAligned = "", midLine = "";
+        let rr = bestCell.r, cc = bestCell.c;
+        while (rr > 0 && cc > 0 && table[rr][cc] > 0) {
+            const baseA = seq1[cc - 1];
+            const baseB = seq2[rr - 1];
+            const diag = table[rr - 1][cc - 1];
+            const up = table[rr - 1][cc];
+            const left = table[rr][cc - 1];
+            const matchVal = parseInt(matchInput.value);
+            const mismatchVal = parseInt(mismatchInput.value);
+            const gapVal = parseInt(gapInput.value);
+
+            if (table[rr][cc] === diag + (baseA === baseB ? matchVal : mismatchVal)) {
+                seqAAligned = baseA + seqAAligned;
+                seqBAligned = baseB + seqBAligned;
+                midLine = (baseA === baseB ? "|" : " ") + midLine;
+                rr--;
+                cc--;
+            } else if (table[rr][cc] === up + gapVal) {
+                seqAAligned = "-" + seqAAligned;
+                seqBAligned = baseB + seqBAligned;
+                midLine = " " + midLine;
+                rr--;
+            } else if (table[rr][cc] === left + gapVal) {
+                seqAAligned = baseA + seqAAligned;
+                seqBAligned = "-" + seqBAligned;
+                midLine = " " + midLine;
+                cc--;
+            } else {
+                break;
+            }
+        }
+        alignedSeq1.innerHTML = styleAlignment(seqAAligned, "A");
+        alignedSeq2.innerHTML = styleAlignment(seqBAligned, "B");
+        alignedMid.textContent = midLine;
+        finalScore.textContent = bestScore;
+        alignmentPanel.style.display = "block";
+
+        explanationBox.innerHTML = `
+        <h3>Traceback Complete</h3>
+        <p>The alignment is shown above with a final score of ${bestScore}.</p>
+      `;
+        nextBtn.disabled = true;
+        autoBtn.disabled = true;
+        guessBtn.disabled = true;
+    }
+
+    /* ------------------------------------------
+       RENDERING
+    ------------------------------------------ */
+    function renderMatrix(showPath = false) {
+        let html = "<table>";
+        // Top row
+        html += "<tr><td></td><td></td>";
+        for (let c = 0; c < seq1.length; c++) {
+            html += `<td class="cell-seq-header">${seq1[c]}</td>`;
+        }
+        html += "</tr>";
+
+        for (let r = 0; r < rows; r++) {
+            html += "<tr>";
+            if (r === 0) {
+                html += `<td></td>`;
+            } else {
+                html += `<td class="cell-seq-header">${seq2[r - 1]}</td>`;
+            }
+            for (let c = 0; c < cols; c++) {
+                let val = table[r][c];
+                let cellClasses = [];
+                // highlight path
+                if (showPath && pathCells.some(cell => cell.r === r && cell.c === c)) {
+                    cellClasses.push("path-cell");
+                }
+                // highlight best cell
+                if (!showPath && r === bestCell.r && c === bestCell.c) {
+                    cellClasses.push("highest-score");
+                }
+                // highlight the current step
+                if (r === highlightCell.r && c === highlightCell.c) {
+                    cellClasses.push("active-cell");
+                }
+
+                const onClick = (isGuessEnabled && r > 0 && c > 0) ? `onclick="guessCell(${r}, ${c})"` : "";
+                html += `<td class="${cellClasses.join(" ")}" ${onClick}>${val}</td>`;
+            }
+            html += "</tr>";
+        }
+        html += "</table>";
+        matrixDiv.innerHTML = html;
+    }
+
+    function styleAlignment(seq, type) {
+        // For a quick distinction, let's just color gaps vs. letters
+        return seq.split("").map(char => {
+            if (char === "-") {
+                return `<span class="char-gap">${char}</span>`;
+            } else {
+                // We don't strictly know if it's match or mismatch here without comparing.
+                // But you could do advanced coloring if needed.
+                return `<span class="char-mismatch">${char}</span>`;
+            }
+        }).join("");
+    }
+
+    /* ------------------------------------------
+       GUESS MODE
+    ------------------------------------------ */
+    function toggleGuessMode() {
+        isGuessEnabled = !isGuessEnabled;
+        guessBtn.textContent = isGuessEnabled ? "Exit Guess Mode" : "Guess Mode";
+        explanationBox.innerHTML = isGuessEnabled
+            ? `<h3>Guess Mode On</h3><p>Click any unfilled (zero) cell to predict its score before the algorithm does.</p>`
+            : `<h3>Guess Mode Off</h3><p>Proceed with normal step-by-step or auto-run alignment.</p>`;
+        renderMatrix();
+    }
+
+    function guessCell(r, c) {
+        if (!isGuessEnabled || r === 0 || c === 0) return;
+        // If the cell is already filled with non-zero, no guess needed
+        if (table[r][c] !== 0) return;
+
+        showGuessPopup(r, c);
+    }
+
+    function showGuessPopup(row, col) {
+        const overlay = document.createElement("div");
+        overlay.className = "overlay";
+        overlay.innerHTML = `
+        <div class="popup">
+          <h2>Guess the Cell Score</h2>
+          <p>(Row ${row}, Col ${col})</p>
+          <input type="number" id="guess-value" placeholder="Enter your guess"/>
+          <br/>
+          <button onclick="closePopup(this)">Cancel</button>
+          <button onclick="submitGuess(${row}, ${col}, this)">Submit</button>
+        </div>
+      `;
+        document.body.appendChild(overlay);
+        overlay.querySelector("#guess-value").focus();
+    }
+
+    function closePopup(btn) {
+        const overlay = btn.closest(".overlay");
+        if (overlay) document.body.removeChild(overlay);
+    }
+
+    function submitGuess(r, c, btn) {
+        const overlay = btn.closest(".overlay");
+        const valField = overlay.querySelector("#guess-value");
+        if (!valField) return;
+        const guessNum = parseInt(valField.value);
+        if (isNaN(guessNum)) {
+            alert("Please enter a valid number");
+            return;
+        }
+        closePopup(btn);
+        checkGuess(r, c, guessNum);
+    }
+
+    function checkGuess(r, c, guessVal) {
+        const matchVal = parseInt(matchInput.value);
+        const mismatchVal = parseInt(mismatchInput.value);
+        const gapVal = parseInt(gapInput.value);
+        const baseA = seq1[c - 1];
+        const baseB = seq2[r - 1];
+        const diag = table[r - 1][c - 1] + (baseA === baseB ? matchVal : mismatchVal);
+        const up = table[r - 1][c] + gapVal;
+        const left = table[r][c - 1] + gapVal;
+        const correct = Math.max(0, diag, up, left);
+
+        if (guessVal === correct) {
+            // Correct guess
+            table[r][c] = correct;
+            if (correct > bestScore) {
+                bestScore = correct;
+                bestCell = {r, c};
+            }
+            showCorrectPopup();
+            storeHistory();
+            renderMatrix();
+        } else {
+            showWrongPopup(diag, up, left, correct);
+        }
+    }
+
+    function showCorrectPopup() {
+        const overlay = document.createElement("div");
+        overlay.className = "overlay";
+        overlay.innerHTML = `
+        <div class="popup" style="color:#27ae60;">
+          <h2>Correct!</h2>
+          <p>Nice job! That’s the right score.</p>
+          <button onclick="closePopup(this)">Sweet!</button>
+        </div>
+      `;
+        document.body.appendChild(overlay);
+        // Confetti
+        releaseConfetti(30);
+    }
+
+    function showWrongPopup(diag, up, left, correct) {
+        const overlay = document.createElement("div");
+        overlay.className = "overlay";
+        overlay.innerHTML = `
+        <div class="popup" style="color:#c0392b;">
+          <h2>Wrong Guess</h2>
+          <p>Diagonal: ${diag} <br/> Up: ${up} <br/> Left: ${left} <br/> Max(0, ...)= ${correct}</p>
+          <button onclick="closePopup(this)">Try Again</button>
+        </div>
+      `;
+        document.body.appendChild(overlay);
+    }
+
+    function releaseConfetti(count) {
+        for (let i = 0; i < count; i++) {
+            const piece = document.createElement("div");
+            piece.className = "confetti-piece";
+            piece.style.left = Math.random() * 100 + "vw";
+            piece.style.animationDuration = (2 + Math.random() * 3) + "s";
+            piece.style.backgroundColor = randomConfettiColor();
+            document.body.appendChild(piece);
+            setTimeout(() => {
+                if (piece.parentNode) piece.parentNode.removeChild(piece);
+            }, 5000);
+        }
+    }
+
+    function randomConfettiColor() {
+        const palette = ["#e74c3c", "#9b59b6", "#2980b9", "#27ae60", "#f1c40f", "#d35400", "#c0392b", "#16a085"];
+        return palette[Math.floor(Math.random() * palette.length)];
+    }
+
+    /* ------------------------------------------
+       AUTO RUN
+    ------------------------------------------ */
+    function toggleAutoRun() {
+        if (autoTimer) {
+            stopAutoRun();
+        } else {
+            autoTimer = setInterval(() => {
+                if (tracing && pathIndex >= pathCells.length) {
+                    stopAutoRun();
+                    return;
+                }
+                nextStep();
+            }, 300);
+            autoBtn.textContent = "Stop";
+            nextBtn.disabled = true;
+            backBtn.disabled = true;
+        }
+    }
+
+    function stopAutoRun() {
+        if (autoTimer) clearInterval(autoTimer);
+        autoTimer = null;
+        autoBtn.textContent = "Auto Run";
+        nextBtn.disabled = false;
+        backBtn.disabled = (historyPointer <= 0);
+    }
+
+    /* ------------------------------------------
+       HISTORY (FOR BACK BUTTON)
+    ------------------------------------------ */
+    function storeHistory() {
+        const snapshot = {
+            table: JSON.parse(JSON.stringify(table)),
+            stepIndex, bestScore,
+            bestCell: {...bestCell},
+            tracing,
+            pathCells: JSON.parse(JSON.stringify(pathCells)),
+            pathIndex,
+            highlightCell: {...highlightCell}
+        };
+        if (historyPointer < stateHistory.length - 1) {
+            stateHistory = stateHistory.slice(0, historyPointer + 1);
+        }
+        stateHistory.push(snapshot);
+        historyPointer = stateHistory.length - 1;
+        backBtn.disabled = (historyPointer <= 0);
+    }
+
+    function restoreHistory(index) {
+        const st = stateHistory[index];
+        table = JSON.parse(JSON.stringify(st.table));
+        stepIndex = st.stepIndex;
+        bestScore = st.bestScore;
+        bestCell = {...st.bestCell};
+        tracing = st.tracing;
+        pathCells = JSON.parse(JSON.stringify(st.pathCells));
+        pathIndex = st.pathIndex;
+        highlightCell = st.highlightCell;
+        historyPointer = index;
+        backBtn.disabled = (historyPointer <= 0);
+        renderMatrix(tracing && pathIndex > 0);
+        if (tracing && pathIndex >= pathCells.length) {
+            finalizeAlignment();
+        }
+    }
+
+    function prevStep() {
+        if (historyPointer > 0) {
+            historyPointer--;
+            restoreHistory(historyPointer);
+        }
+    }
+
+    /* ------------------------------------------
+       RESET
+    ------------------------------------------ */
+    function resetAll() {
+        clearState();
+        matrixDiv.innerHTML = "";
+        explanationBox.innerHTML = `
+        <h3>Reset Complete</h3>
+        <p>Adjust sequences or scoring, then press “Initialize” again to start a new alignment.</p>
+      `;
+        nextBtn.disabled = true;
+        backBtn.disabled = true;
+        autoBtn.disabled = true;
+        guessBtn.disabled = true;
+    }
+</script>
+</body>
+</html>
